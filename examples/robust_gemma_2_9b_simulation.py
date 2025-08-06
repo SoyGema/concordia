@@ -222,6 +222,20 @@ class RobustEvolutionarySimulation:
     def _prepare_analysis_data(self, completed: bool, reason: str) -> Dict[str, Any]:
         """Prepare analysis data."""
         return {
+            'config': {
+                'model_name': self.config.model_name,
+                'api_type': self.config.api_type,
+                'device': self.config.device,
+                'embedder_name': self.config.embedder_name,
+                'disable_language_model': self.config.disable_language_model,
+                'pop_size': self.config.pop_size,
+                'num_generations': self.config.num_generations,
+                'num_rounds': self.config.num_rounds,
+                'selection_method': self.config.selection_method,
+                'mutation_rate': self.config.mutation_rate,
+            },
+            'generations': self._extract_generation_data(),
+            'final_cooperation_rate': self._calculate_final_cooperation_rate(),
             'simulation_status': {
                 'completed': completed,
                 'reason': reason,
@@ -268,17 +282,52 @@ class RobustEvolutionarySimulation:
 
         return metadata
 
+    def _extract_generation_data(self) -> list:
+        """Extract generation data for analysis."""
+        generations = []
+        if self.measurements:
+            try:
+                gen_summaries = self.measurements.get_channel('evolutionary_generation_summary')
+                for gen_data in gen_summaries:
+                    gen_info = {
+                        'generation': len(generations) + 1,
+                        'scores': gen_data.get('agent_scores', {}),
+                        'cooperative_count': gen_data.get('cooperative_count', 0),
+                        'selfish_count': gen_data.get('selfish_count', 0),
+                        'cooperation_rate': gen_data.get('cooperation_rate', 0),
+                        'avg_cooperative_score': gen_data.get('avg_cooperative_score', 0),
+                        'avg_selfish_score': gen_data.get('avg_selfish_score', 0),
+                        'cooperative_agents': gen_data.get('cooperative_agents', []),
+                    }
+                    generations.append(gen_info)
+            except Exception as e:
+                logger.warning(f"Could not extract generation data for analysis: {e}")
+        return generations
+
+    def _calculate_final_cooperation_rate(self) -> float:
+        """Calculate the final cooperation rate."""
+        if self.measurements:
+            try:
+                # Try to get the final cooperation rate from measurements
+                gen_summaries = self.measurements.get_channel('evolutionary_generation_summary')
+                if gen_summaries:
+                    final_coop_rate = gen_summaries[-1].get('cooperation_rate', 0.5)
+                    return final_coop_rate
+            except Exception as e:
+                logger.warning(f"Could not calculate final cooperation rate: {e}")
+        return 0.5  # Default fallback
+
 def run_robust_gemma_2_9b_simulation():
     """Run a robust Gemma 2 9B simulation with intelligent timeout management."""
 
     # Gemma 2 9B configuration with robust timeout management
     ROBUST_GEMMA_CONFIG = evolutionary_types.EvolutionConfig(
         pop_size=2,
-        num_generations=5,
+        num_generations=1,
         selection_method='topk',
         top_k=1,
         mutation_rate=0.1,
-        num_rounds=4,
+        num_rounds=2,
         api_type='pytorch_gemma',
         model_name='google/gemma-2-9b-it',
         embedder_name='all-mpnet-base-v2',
