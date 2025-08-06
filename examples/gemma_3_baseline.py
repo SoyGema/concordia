@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Final Gemma 3 test - 2 agents, 4 rounds, 3 generations (reduced from 5 for reliability).
+Full Gemma 3 4B baseline simulation using proven working settings.
+This creates the official baseline results for the multi-model parameter study.
 """
 
 import logging
@@ -10,63 +11,63 @@ import time
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def run_final_gemma_3_test():
-    """Run final Gemma 3 test with guaranteed completion."""
+def run_full_gemma_3_baseline():
+    """Run the full Gemma 3 4B baseline simulation with proven settings."""
     try:
-        logger.info("🚀 Starting final Gemma 3 test - 2 agents, 4 rounds, 3 generations...")
+        logger.info("🚀 Starting FULL Gemma 3 4B baseline simulation...")
         
         from concordia.typing import evolutionary as evolutionary_types
         from concordia.utils.logging_evolutionary_simulation import logging_evolutionary_main
         from concordia.utils.enhanced_results_exporter import EnhancedResultsExporter
         from concordia.utils.generation_logger import get_generation_logger
         
-        # Final test configuration - reliable completion
-        FINAL_CONFIG = evolutionary_types.EvolutionConfig(
+        # Updated baseline configuration - 2 agents, 4 rounds, 5 generations
+        GEMMA_3_BASELINE_CONFIG = evolutionary_types.EvolutionConfig(
             pop_size=2,  # 2 agents as requested
-            num_generations=3,  # 3 generations (reduced from 5 for reliability)
+            num_generations=5,  # 5 generations as requested
             selection_method='topk',
-            top_k=1,
+            top_k=1,  # Adjust for smaller population
             mutation_rate=0.1,
             num_rounds=4,  # 4 rounds as requested
             api_type='pytorch_gemma',
-            model_name='google/gemma-3-1b-it',
+            model_name='google/gemma-3-4b-it',
             embedder_name='all-mpnet-base-v2',
             device='mps',
             disable_language_model=False,
         )
         
-        logger.info("Configuration: 2 agents, 3 generations, 4 rounds per generation")
-        logger.info("This should complete in ~8-10 minutes with improved generation quality")
+        logger.info("Starting Gemma 3 4B simulation with updated parameters...")
+        logger.info(f"Configuration: {GEMMA_3_BASELINE_CONFIG.pop_size} agents, {GEMMA_3_BASELINE_CONFIG.num_generations} generations, {GEMMA_3_BASELINE_CONFIG.num_rounds} rounds per generation")
         
         start_time = time.time()
-        measurements = logging_evolutionary_main(config=FINAL_CONFIG)
+        measurements = logging_evolutionary_main(config=GEMMA_3_BASELINE_CONFIG)
         end_time = time.time()
         
-        logger.info("✅ Final Gemma 3 test completed!")
+        logger.info("✅ Full Gemma 3 4B baseline simulation completed!")
         
         # Enhanced results export
-        logger.info("📊 Exporting enhanced results...")
+        logger.info("📊 Exporting enhanced structured results...")
         exporter = EnhancedResultsExporter()
         
         # Process measurement data
         results_data = {
             'config': {
-                'model_name': FINAL_CONFIG.model_name,
-                'api_type': FINAL_CONFIG.api_type,
-                'pop_size': FINAL_CONFIG.pop_size,
-                'num_generations': FINAL_CONFIG.num_generations,
-                'num_rounds': FINAL_CONFIG.num_rounds,
-                'selection_method': FINAL_CONFIG.selection_method,
-                'mutation_rate': FINAL_CONFIG.mutation_rate,
-                'device': FINAL_CONFIG.device,
-                'disable_language_model': FINAL_CONFIG.disable_language_model,
+                'model_name': GEMMA_3_BASELINE_CONFIG.model_name,
+                'api_type': GEMMA_3_BASELINE_CONFIG.api_type,
+                'pop_size': GEMMA_3_BASELINE_CONFIG.pop_size,
+                'num_generations': GEMMA_3_BASELINE_CONFIG.num_generations,
+                'num_rounds': GEMMA_3_BASELINE_CONFIG.num_rounds,
+                'selection_method': GEMMA_3_BASELINE_CONFIG.selection_method,
+                'mutation_rate': GEMMA_3_BASELINE_CONFIG.mutation_rate,
+                'device': GEMMA_3_BASELINE_CONFIG.device,
+                'disable_language_model': GEMMA_3_BASELINE_CONFIG.disable_language_model,
             },
             'generations': [],
             'final_cooperation_rate': 0,
             'performance': {}
         }
         
-        # Extract generation data
+        # Extract generation data from measurements
         try:
             gen_summaries = measurements.get_channel('evolutionary_generation_summary')
             for gen_data in gen_summaries:
@@ -83,6 +84,7 @@ def run_final_gemma_3_test():
                 }
                 results_data['generations'].append(gen_info)
             
+            # Set final cooperation rate
             if results_data['generations']:
                 results_data['final_cooperation_rate'] = results_data['generations'][-1]['cooperation_rate']
                 
@@ -124,14 +126,14 @@ def run_final_gemma_3_test():
         
         metadata = {
             'simulation_info': {
-                'model_name': FINAL_CONFIG.model_name,
-                'api_type': FINAL_CONFIG.api_type,
-                'device': FINAL_CONFIG.device,
-                'language_model_active': not FINAL_CONFIG.disable_language_model,
+                'model_name': GEMMA_3_BASELINE_CONFIG.model_name,
+                'api_type': GEMMA_3_BASELINE_CONFIG.api_type,
+                'device': GEMMA_3_BASELINE_CONFIG.device,
+                'language_model_active': not GEMMA_3_BASELINE_CONFIG.disable_language_model,
             },
             'performance': {
                 'duration_seconds': round(end_time - start_time, 2),
-                'avg_generation_time': round((end_time - start_time) / FINAL_CONFIG.num_generations, 2),
+                'avg_generation_time': round((end_time - start_time) / GEMMA_3_BASELINE_CONFIG.num_generations, 2),
             },
             'system_info': {
                 'platform': platform.system(),
@@ -140,38 +142,32 @@ def run_final_gemma_3_test():
                 'mps_available': torch.backends.mps.is_available() if hasattr(torch.backends, 'mps') else False,
             },
             'experiment_parameters': {
-                'population_size': FINAL_CONFIG.pop_size,
-                'generations': FINAL_CONFIG.num_generations,
-                'rounds_per_generation': FINAL_CONFIG.num_rounds,
-                'selection_method': FINAL_CONFIG.selection_method,
-                'mutation_rate': FINAL_CONFIG.mutation_rate,
+                'population_size': GEMMA_3_BASELINE_CONFIG.pop_size,
+                'generations': GEMMA_3_BASELINE_CONFIG.num_generations,
+                'rounds_per_generation': GEMMA_3_BASELINE_CONFIG.num_rounds,
+                'selection_method': GEMMA_3_BASELINE_CONFIG.selection_method,
+                'mutation_rate': GEMMA_3_BASELINE_CONFIG.mutation_rate,
             }
         }
         
         # Get generation log
         generation_log = get_generation_logger().get_all_interactions()
-        logger.info(f"📝 Captured {len(generation_log)} LLM interactions")
+        logger.info(f"📝 Captured {len(generation_log)} LLM interactions during baseline simulation")
         
-        # Calculate quality metrics
-        if generation_log:
-            total_words = sum(len(interaction.get('response', '').split()) for interaction in generation_log)
-            avg_words = total_words / len(generation_log)
-            logger.info(f"📊 Quality metrics: {avg_words:.1f} avg words/interaction, {total_words} total words")
-        
-        # Export results
+        # Export with structured folders including generation log
         results_folder = exporter.export_complete_results(
-            model_name="final-test-" + FINAL_CONFIG.model_name,
+            model_name="baseline-" + GEMMA_3_BASELINE_CONFIG.model_name,
             results_data=results_data,
             analysis_data=analysis_data,
             metadata=metadata,
             generation_log=generation_log
         )
         
-        logger.info(f"🎉 Final test results exported to: {results_folder}")
+        logger.info(f"🎉 Full Gemma 3 4B baseline results exported to: {results_folder}")
         
-        # Summary
-        logger.info("📈 FINAL TEST SUMMARY:")
-        logger.info(f"   Model: {FINAL_CONFIG.model_name} (50 token limit)")
+        # Log summary statistics
+        logger.info("📈 BASELINE SIMULATION SUMMARY:")
+        logger.info(f"   Model: {GEMMA_3_BASELINE_CONFIG.model_name}")
         logger.info(f"   Duration: {end_time - start_time:.2f} seconds")
         logger.info(f"   Generations: {len(results_data['generations'])}")
         logger.info(f"   Final Cooperation Rate: {results_data['final_cooperation_rate']:.2%}")
@@ -180,18 +176,22 @@ def run_final_gemma_3_test():
         return True
         
     except Exception as e:
-        logger.error(f"❌ Final test failed: {e}")
+        logger.error(f"❌ Full Gemma 3 4B baseline simulation failed: {e}")
         logger.exception("Full traceback:")
         return False
 
 if __name__ == "__main__":
-    print("🎯 Final Gemma 3 Test - 2 Agents, 4 Rounds, 3 Generations")
+    print("🎯 Gemma 3 Multi-Model Parameter Study - Full 4B Baseline")
+    print("⚠️  Note: This script may timeout with large models. Consider using:")
+    print("   examples/robust_gemma_simulation.py for better timeout management")
     print("=" * 70)
     
-    success = run_final_gemma_3_test()
+    success = run_full_gemma_3_baseline()
     
     if success:
-        print("\n🎉 SUCCESS: Final Gemma 3 test completed!")
-        print("🔍 Check simulation_results/ for complete results with improved generation quality!")
+        print("\n🎉 SUCCESS: Full Gemma 3 4B baseline simulation completed!")
+        print("🔍 Check simulation_results/ for complete baseline results!")
+        print("📋 Ready to proceed with multi-model parameter study!")
     else:
-        print("\n❌ Final test failed")
+        print("\n❌ Baseline simulation failed")
+        print("💡 Try the robust version: python examples/robust_gemma_simulation.py")

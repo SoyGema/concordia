@@ -119,6 +119,105 @@ This repository includes an **evolutionary simulation framework** that models th
 - 🔄 **Checkpointing System**: Save and resume simulations from any generation
 - 🧪 **Modular Architecture**: Type-safe design with separated concerns (typing, checkpointing, algorithms)
 
+### Parameters
+
+The evolutionary simulation framework uses the `EvolutionConfig` dataclass to configure all aspects of the simulation. Parameters are organized into several categories:
+
+#### Population & Evolution Parameters
+
+- **`pop_size`** (default: 4): Number of agents in the population. Larger populations provide more diversity but increase computational cost.
+- **`num_generations`** (default: 10): Number of evolutionary cycles to run. Each generation includes selection, reproduction, and mutation phases.
+- **`selection_method`** (default: 'topk'): Method for selecting surviving agents:
+  - `'topk'`: Select the top-performing agents based on fitness scores
+  - `'probabilistic'`: Select agents probabilistically based on fitness (higher fitness = higher selection probability)
+- **`top_k`** (default: 2): Number of survivors when using top-k selection. Must be ≤ pop_size.
+- **`mutation_rate`** (default: 0.2): Probability that an agent's strategy will mutate during reproduction (0.0 = no mutation, 1.0 = always mutate).
+
+#### Game Parameters
+
+- **`num_rounds`** (default: 10): Number of rounds in each public goods game. More rounds provide more opportunities for strategy expression but increase simulation time.
+
+#### Language Model Configuration
+
+- **`api_type`** (default: 'pytorch_gemma'): Type of language model API to use:
+  - `'pytorch_gemma'`: Local Gemma models via PyTorch/Transformers
+  - `'openai'`: OpenAI GPT models via API
+  - `'mistral'`: Mistral AI models via API
+  - `'amazon_bedrock'`: AWS Bedrock models (Claude, Llama, etc.)
+  - `'google_aistudio_model'`: Google AI Studio models (Gemini)
+
+- **`model_name`** (default: 'google/gemma-2b-it'): Specific model to use. Examples:
+  - Gemma: `'google/gemma-2b-it'`, `'google/gemma-7b-it'`
+  - OpenAI: `'gpt-4o'`, `'gpt-4o-mini'`, `'gpt-3.5-turbo'`
+  - Mistral: `'mistral-large-latest'`, `'mistral-medium'`
+
+- **`embedder_name`** (default: 'all-mpnet-base-v2'): Sentence transformer model for generating text embeddings used in agent memory systems.
+
+#### Hardware & Performance
+
+- **`device`** (default: 'cpu'): Computing device for local models:
+  - `'cpu'`: CPU processing (slowest but universal)
+  - `'cuda:0'`: NVIDIA GPU acceleration (fastest for compatible hardware)
+  - `'mps'`: Mac GPU acceleration via Metal Performance Shaders
+
+- **`api_key`** (default: None): API key for cloud-based language models. Can also be set via environment variables (e.g., `OPENAI_API_KEY`).
+
+- **`disable_language_model`** (default: False): If True, uses a dummy language model that generates random responses. Useful for:
+  - Testing simulation logic without LLM dependencies
+  - Debugging evolutionary algorithms
+  - Fast prototyping and development
+
+#### Strategy Types
+
+Agents in the simulation can adopt one of two fundamental strategies:
+
+- **`Strategy.COOPERATIVE`**: "Maximize group reward in the public goods game" - agents contribute to the common pool
+- **`Strategy.SELFISH`**: "Maximize personal reward in the public goods game" - agents free-ride on others' contributions
+
+#### Example Configurations
+
+**Minimal Test Configuration:**
+```python
+config = EvolutionConfig(
+    pop_size=2,
+    num_generations=2,
+    num_rounds=2,
+    disable_language_model=True  # Fast testing
+)
+```
+
+**Research Configuration:**
+```python
+config = EvolutionConfig(
+    pop_size=8,
+    num_generations=50,
+    selection_method='probabilistic',
+    top_k=4,
+    mutation_rate=0.15,
+    num_rounds=20,
+    api_type='pytorch_gemma',
+    model_name='google/gemma-7b-it',
+    device='cuda:0'
+)
+```
+
+**Production Configuration:**
+```python
+config = EvolutionConfig(
+    pop_size=12,
+    num_generations=100,
+    selection_method='topk',
+    top_k=6,
+    mutation_rate=0.1,
+    num_rounds=25,
+    api_type='openai',
+    model_name='gpt-4o',
+    api_key=os.getenv('OPENAI_API_KEY')
+)
+```
+
+The framework automatically validates parameter combinations and provides informative error messages for invalid configurations.
+
 ### Running the Evolutionary Simulation
 
 The evolutionary simulation is located in `examples/evolutionary_simulation.py` and supports multiple language model backends.
