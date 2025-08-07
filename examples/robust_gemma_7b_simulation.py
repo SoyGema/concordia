@@ -308,28 +308,28 @@ class RobustGemma2_7BSimulation:
     def _preload_critical_modules(self):
         """Pre-import modules that might cause threading conflicts during simulation."""
         logger.info("🔧 Pre-loading critical modules to prevent threading conflicts...")
-        
+
         try:
             # Import reactivex to ensure it's available in the main thread context
             import reactivex as rx
             logger.debug("✅ Pre-loaded reactivex successfully")
-            
+
             # Try to import the problematic deprecated modules
             try:
                 from concordia.agents.deprecated import entity_agent_with_logging
                 logger.debug("✅ Pre-loaded deprecated entity_agent_with_logging successfully")
             except ImportError as e:
                 logger.debug(f"⚠️  Could not pre-load deprecated entity_agent_with_logging: {e}")
-            
+
             # Pre-load any other potentially problematic modules
             try:
                 from concordia.utils.deprecated import measurements
-                logger.debug("✅ Pre-loaded deprecated measurements successfully")  
+                logger.debug("✅ Pre-loaded deprecated measurements successfully")
             except ImportError as e:
                 logger.debug(f"⚠️  Could not pre-load deprecated measurements: {e}")
-                
+
             logger.info("🔧 Critical modules pre-loading completed")
-            
+
         except ImportError as e:
             logger.warning(f"⚠️  Could not pre-load reactivex: {e}")
             logger.warning("⚠️  This may cause threading conflicts with deprecated modules")
@@ -380,11 +380,11 @@ def run_robust_gemma2_7b_simulation():
     # Known working Gemma 2 7B configuration with timeout management
     ROBUST_GEMMA2_7B_CONFIG = evolutionary_types.EvolutionConfig(
         pop_size=2,  # Small for speed
-        num_generations=2,  # Just 2 generations (like original test)
+        num_generations=5,  # Just 2 generations (like original test)
         selection_method='topk',
         top_k=1,
         mutation_rate=0.1,
-        num_rounds=2,  # Minimal rounds (like original test)
+        num_rounds=4,  # Minimal rounds (like original test)
         api_type='pytorch_gemma',
         model_name='google/gemma-7b-it',  # Known working model
         embedder_name='all-mpnet-base-v2',
