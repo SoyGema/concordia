@@ -13,6 +13,31 @@ from concordia.utils.logging_language_model import wrap_language_model_with_logg
 
 logger = logging.getLogger(__name__)
 
+def _cleanup_memory_between_generations():
+    """Clean up memory between generations to prevent memory buildup and model hanging."""
+    import gc
+    
+    try:
+        # Import torch conditionally
+        import torch
+        
+        # Clean up GPU/MPS cache (Mac Metal Performance Shaders)
+        if torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+            logger.debug("🧹 Cleared MPS (Mac GPU) cache")
+            
+        # Clean up CUDA cache if available
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            logger.debug("🧹 Cleared CUDA cache")
+            
+    except ImportError:
+        logger.debug("🧹 PyTorch not available, skipping GPU cache cleanup")
+    
+    # Python garbage collection
+    collected = gc.collect()
+    logger.info(f"🧹 Memory cleanup complete: collected {collected} objects")
+
 def logging_evolutionary_main(
     config: evolutionary_types.EvolutionConfig,
     checkpoint_dir: Optional[str] = None,
@@ -55,13 +80,34 @@ def logging_evolutionary_main(
     generation_logger = get_generation_logger()
     logger.info("🔄 Generation logger reset - ready to capture LLM interactions")
     
+    # Initialize cached models at simulation level (reuse across generations)
+    cached_models = {}
+    
+    def get_cached_model(config: evolutionary_types.EvolutionConfig):
+        """Get or create cached language model and embedder."""
+        cache_key = f"{config.api_type}_{config.model_name}_{config.device}"
+        
+        if cache_key not in cached_models:
+            logger.info(f"🔧 Creating cached language model: {config.model_name}")
+            base_model = setup_language_model(config)
+            embedder = setup_embedder(config)
+            cached_models[cache_key] = {
+                'base_model': base_model,
+                'embedder': embedder
+            }
+            logger.info(f"✅ Language model cached successfully")
+        else:
+            logger.info(f"♻️  Reusing cached language model: {config.model_name}")
+            
+        return cached_models[cache_key]['base_model'], cached_models[cache_key]['embedder']
+    
     # We need to patch the run_generation function to inject our logging
     def logging_run_generation(
         agent_configs: Dict[str, basic_with_plan.Entity],
         config: evolutionary_types.EvolutionConfig,
         measurements: Optional[measurements_lib.Measurements] = None,
     ) -> Dict[str, float]:
-        """Enhanced run_generation with LLM logging."""
+        """Enhanced run_generation with LLM logging and model reuse."""
         
         gm_key = 'game_master'
         gm_prefab = PublicGoodsGameMaster(
@@ -70,9 +116,8 @@ def logging_evolutionary_main(
             }
         )
         
-        # Setup base language model and embedder
-        base_model = setup_language_model(config)
-        embedder = setup_embedder(config)
+        # Use cached language model and embedder (major performance improvement!)
+        base_model, embedder = get_cached_model(config)
         
         # Wrap the language model with logging - this is the key integration!
         # We'll use a dynamic agent name that gets updated during simulation
@@ -178,6 +223,9 @@ def logging_evolutionary_main(
         
         # Log generation results
         log_generation(generation, agent_configs, scores, measurements)
+        
+        # Memory cleanup between generations (prevent memory buildup)
+        _cleanup_memory_between_generations()
         
         # Log the generation completion
         generation_stats = generation_logger.get_statistics()
