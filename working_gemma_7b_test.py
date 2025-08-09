@@ -72,8 +72,8 @@ def run_working_gemma_7b_simulation():
                 gen_info = {
                     'generation': len(results_data['generations']) + 1,
                     'scores': gen_data.get('agent_scores', {}),
-                    'cooperative_count': gen_data.get('cooperative_count', 0),
-                    'selfish_count': gen_data.get('selfish_count', 0),
+                    'cooperative_count': gen_data.get('cooperative_agents', 0),  # Fixed: use correct field name
+                    'selfish_count': gen_data.get('selfish_agents', 0),  # Fixed: use correct field name
                     'cooperation_rate': gen_data.get('cooperation_rate', 0),
                 }
                 results_data['generations'].append(gen_info)

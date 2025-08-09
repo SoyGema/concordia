@@ -29,7 +29,7 @@ TEST_CONFIG = evolutionary_types.EvolutionConfig(
     disable_language_model=False,
 )
 
-def test_model_reuse():
+def test_model_reuse() -> bool:
     """Test the model reuse functionality."""
     print("🧪 TESTING MODEL REUSE")
     print("=" * 50)

@@ -205,8 +205,8 @@ class RobustEvolutionarySimulation:
                     gen_info = {
                         'generation': len(results_data['generations']) + 1,
                         'scores': gen_data.get('agent_scores', {}),
-                        'cooperative_count': gen_data.get('cooperative_count', 0),
-                        'selfish_count': gen_data.get('selfish_count', 0),
+                        'cooperative_count': gen_data.get('cooperative_agents', 0),  # Fixed: use correct field name
+                        'selfish_count': gen_data.get('selfish_agents', 0),  # Fixed: use correct field name
                         'cooperation_rate': gen_data.get('cooperation_rate', 0),
                     }
                     results_data['generations'].append(gen_info)
@@ -288,15 +288,23 @@ class RobustEvolutionarySimulation:
         if self.measurements:
             try:
                 gen_summaries = self.measurements.get_channel('evolutionary_generation_summary')
+                fitness_stats = self.measurements.get_channel('evolutionary_fitness_statistics')  # Fix: get scores from correct channel
+                
+                # Create a mapping of generation to fitness stats for easier lookup
+                fitness_by_gen = {stat.get('generation'): stat for stat in fitness_stats}
+                
                 for gen_data in gen_summaries:
+                    generation_num = len(generations) + 1
+                    fitness_data = fitness_by_gen.get(generation_num, {})
+                    
                     gen_info = {
-                        'generation': len(generations) + 1,
+                        'generation': generation_num,
                         'scores': gen_data.get('agent_scores', {}),
-                        'cooperative_count': gen_data.get('cooperative_count', 0),
-                        'selfish_count': gen_data.get('selfish_count', 0),
+                        'cooperative_count': gen_data.get('cooperative_agents', 0),  # Fixed: use correct field name
+                        'selfish_count': gen_data.get('selfish_agents', 0),  # Fixed: use correct field name
                         'cooperation_rate': gen_data.get('cooperation_rate', 0),
-                        'avg_cooperative_score': gen_data.get('avg_cooperative_score', 0),
-                        'avg_selfish_score': gen_data.get('avg_selfish_score', 0),
+                        'avg_cooperative_score': fitness_data.get('avg_cooperative_score', 0),  # Fix: extract from fitness_stats channel
+                        'avg_selfish_score': fitness_data.get('avg_selfish_score', 0),  # Fix: extract from fitness_stats channel
                         'cooperative_agents': gen_data.get('cooperative_agents', []),
                     }
                     generations.append(gen_info)

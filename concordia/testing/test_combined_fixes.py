@@ -28,7 +28,7 @@ TEST_CONFIG = evolutionary_types.EvolutionConfig(
     disable_language_model=False,
 )
 
-def test_combined_fixes():
+def test_combined_fixes() -> bool:
     """Test both model reuse and memory cleanup fixes."""
     print("🧪 TESTING COMBINED FIXES (Model Reuse + Memory Cleanup)")
     print("=" * 70)

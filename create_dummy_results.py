@@ -72,8 +72,8 @@ def run_dummy_simulation_for_results():
                 gen_info = {
                     'generation': len(results_data['generations']) + 1,
                     'scores': gen_data.get('agent_scores', {}),
-                    'cooperative_count': gen_data.get('cooperative_count', 0),
-                    'selfish_count': gen_data.get('selfish_count', 0),
+                    'cooperative_count': gen_data.get('cooperative_agents', 0),  # Fixed: use correct field name
+                    'selfish_count': gen_data.get('selfish_agents', 0),  # Fixed: use correct field name
                     'cooperation_rate': gen_data.get('cooperation_rate', 0),
                     'avg_cooperative_score': gen_data.get('avg_cooperative_score', 0),
                     'avg_selfish_score': gen_data.get('avg_selfish_score', 0),
