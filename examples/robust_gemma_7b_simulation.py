@@ -341,14 +341,14 @@ class RobustGemma2_7BSimulation:
             try:
                 gen_summaries = self.measurements.get_channel('evolutionary_generation_summary')
                 fitness_stats = self.measurements.get_channel('evolutionary_fitness_statistics')  # Fix: get scores from correct channel
-                
+
                 # Create a mapping of generation to fitness stats for easier lookup
                 fitness_by_gen = {stat.get('generation'): stat for stat in fitness_stats}
-                
+
                 for gen_data in gen_summaries:
                     generation_num = len(generations) + 1
                     fitness_data = fitness_by_gen.get(generation_num, {})
-                    
+
                     gen_info = {
                         'generation': generation_num,
                         'scores': gen_data.get('agent_scores', {}),
@@ -385,18 +385,18 @@ class RobustGemma2_7BSimulation:
 def run_robust_gemma2_7b_simulation():
     """Run a robust Gemma 2 7B simulation with intelligent timeout management."""
 
-    # Known working Gemma 2 7B configuration with timeout management
+    # Minimal test configuration for Gemma 2 7B
     ROBUST_GEMMA2_7B_CONFIG = evolutionary_types.EvolutionConfig(
-        pop_size=2,  # Small for speed
-        num_generations=5,  # Just 2 generations (like original test)
+        pop_size=2,  # 6 for better parallelization and scientific rigor
+        num_generations=2,  # Just 2 generations
         selection_method='topk',
-        top_k=1,
+        top_k=1,  # Minimal selection pressure
         mutation_rate=0.1,
-        num_rounds=4,  # Minimal rounds (like original test)
+        num_rounds=2,  # Just 2 rounds for speed
         api_type='pytorch_gemma',
         model_name='google/gemma-7b-it',  # Known working model
         embedder_name='all-mpnet-base-v2',
-        device='mps',
+        device='mps',  # Mac GPU acceleration
         disable_language_model=False,
     )
 

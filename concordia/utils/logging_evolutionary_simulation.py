@@ -150,7 +150,9 @@ def logging_evolutionary_main(
             prefabs={**agent_configs, gm_key: gm_prefab},
         )
         
-        engine = simultaneous.Simultaneous()
+        # Use safe engine to prevent threading conflicts entirely
+        from examples.safe_engines import create_safe_engine
+        engine = create_safe_engine(engine_type='safe_simultaneous')
         sim = simulation_generic.Simulation(
             config=sim_config,
             model=logging_model,  # Use the logging-wrapped model!

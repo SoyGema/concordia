@@ -4,7 +4,7 @@ Logging Language Model Wrapper
 Intercepts and logs all language model interactions for analysis.
 """
 
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from typing import Any
 import re
 import logging
@@ -98,7 +98,7 @@ class LoggingLanguageModel(language_model.LanguageModel):
                 else:
                     return captured
         
-        return None
+        return "Agent_Unknown"  # Return default instead of None
     
     def _extract_action(self, response: str) -> str:
         """Extract the final action/decision from the response."""
@@ -127,21 +127,24 @@ class LoggingLanguageModel(language_model.LanguageModel):
         responses: Sequence[str],
         *,
         seed: int | None = None,
-    ) -> str:
+    ) -> tuple[int, str, Mapping[str, Any]]:
         """Sample a choice and log it."""
         if hasattr(self.base_model, 'sample_choice'):
             result = self.base_model.sample_choice(prompt, responses, seed=seed)
+            
+            # Extract the choice string from the tuple (index, choice, metadata)
+            choice_str = result[1] if isinstance(result, tuple) and len(result) > 1 else str(result)
             
             # Log the choice interaction
             self.generation_logger.log_interaction(
                 agent=self.agent_name,
                 prompt=prompt,
-                response=f"Chose: {result}",
-                action=result,
+                response=f"Chose: {choice_str}",
+                action=choice_str,
                 extra_data={
                     'interaction_type': 'choice',
                     'available_options': list(responses),
-                    'selected_option': result
+                    'selected_option': choice_str
                 }
             )
             
@@ -153,10 +156,16 @@ class LoggingLanguageModel(language_model.LanguageModel):
             response = self.sample_text(full_prompt, max_tokens=10)
             
             # Find best match
-            for option in responses:
+            selected_idx = 0
+            selected_choice = responses[0]  # Default to first option
+            for idx, option in enumerate(responses):
                 if option.lower() in response.lower():
-                    return option
-            return responses[0]  # Default to first option
+                    selected_idx = idx
+                    selected_choice = option
+                    break
+            
+            # Return tuple matching the base class signature
+            return (selected_idx, selected_choice, {})
 
 def wrap_language_model_with_logging(base_model: language_model.LanguageModel, 
                                    agent_name: str = "Unknown") -> LoggingLanguageModel:

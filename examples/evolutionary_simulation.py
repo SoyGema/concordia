@@ -26,6 +26,7 @@ from typing import Any, Dict, Optional
 
 from concordia.associative_memory import basic_associative_memory
 from concordia.environment.engines import simultaneous
+from examples.optimized_engines import create_optimized_engine
 from concordia.language_model import language_model
 from concordia.language_model import no_language_model
 from concordia.language_model import utils as language_model_utils
@@ -131,12 +132,27 @@ DEFAULT_CONFIG = evolutionary_types.EvolutionConfig(
 
 # === Example LLM configurations ===
 GEMMA_CONFIG = evolutionary_types.EvolutionConfig(
-    pop_size=4,
+    pop_size=8,  # Increased for better parallelization
     num_generations=5,
     api_type='pytorch_gemma',
     model_name='google/gemma-2b-it',
     embedder_name='all-mpnet-base-v2',
     device='mps',  # Mac GPU acceleration via Metal Performance Shaders
+    disable_language_model=False,
+)
+
+# Optimized configuration for fast Gemma 7B experiments
+GEMMA_7B_OPTIMIZED_CONFIG = evolutionary_types.EvolutionConfig(
+    pop_size=6,  # Balanced between speed and scientific rigor
+    num_generations=8,
+    selection_method='topk',
+    top_k=2,
+    mutation_rate=0.1,
+    num_rounds=5,  # Sufficient for cooperation dynamics
+    api_type='pytorch_gemma',
+    model_name='google/gemma-7b-it',
+    embedder_name='all-mpnet-base-v2',
+    device='mps',  # Mac GPU acceleration
     disable_language_model=False,
 )
 
@@ -275,7 +291,9 @@ def run_generation(
       prefabs={**agent_configs, gm_key: gm_prefab},  # All keys are strings
   )
   
-  engine = simultaneous.Simultaneous()
+  # Use optimized engine for Mac with population-based max_workers
+  engine = create_optimized_engine(pop_size=config.pop_size, engine_type='simultaneous')
+  
   sim = simulation_generic.Simulation(
       config=sim_config,
       model=model,
